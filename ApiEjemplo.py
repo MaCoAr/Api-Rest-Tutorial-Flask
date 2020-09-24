@@ -4,16 +4,11 @@ from sqlalchemy import create_engine
 import os
 
 # https://stackoverflow.com/questions/18208492/sqlalchemy-exc-operationalerror-operationalerror-unable-to-open-database-file/44687471
-file_path = os.path.abspath(os.getcwd())+"\chinook.db"
-
 # SQLite
-# CONNECTION_STRING = 'sqlite:////chinook.db'
-# db_connect = create_engine(CONNECTION_STRING)
+file_path = os.path.abspath(os.getcwd())+"\chinook.db"
+db_connect = create_engine('sqlite:///'+file_path)
 app = Flask(__name__)
 api = Api(app)
-
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///'+file_path
-db_connect = create_engine('sqlite:///'+file_path)
 
 class Employees(Resource):
     def get(self):
@@ -62,9 +57,26 @@ class EmployeeData(Resource):
         return jsonify(result)
 
 
+class UpdateEmployee(Resource):
+    def put(self, employee_id):
+        first_name = request.json['FirstName']
+        conn = db_connect.connect()
+        query = conn.execute("update employees set FirstName='%s'  where EmployeeId=%s" % (first_name, int(employee_id)))
+        return {'status': 'Cambio de nombre realizado'}
+
+
+class DeleteEmployee(Resource):
+    def delete(self, employee_id):
+        conn = db_connect.connect()
+        query = conn.execute("delete from employees where EmployeeId=%d " % int(employee_id))
+        return {'status': 'Empleado borrado con éxito'}
+
+
 api.add_resource(Employees, '/employees')  # Route_1
 api.add_resource(Tracks, '/tracks')  # Route_2
 api.add_resource(EmployeeData, '/employees/<employee_id>')  # Route_3
+api.add_resource(UpdateEmployee, '/employees/<employee_id>')  # Route_4
+api.add_resource(DeleteEmployee, '/delete/<employee_id>')   # Route_5
 
 if __name__ == '__main__':
     app.run(port='5000')
